@@ -1,0 +1,313 @@
+{
+  "reference_members": {
+    "21": {
+      "backmark": "21",
+      "drawing_id": "429B21",
+      "section": "L90x90x6",
+      "canonical_section": "L90x90x6",
+      "section_family": "ANGLE",
+      "length_mm": 1849.0,
+      "qty": 4
+    },
+    "22H": {
+      "backmark": "22H",
+      "drawing_id": "429B22H",
+      "section": "HT8 thk x154",
+      "canonical_section": "FLAT 8x154",
+      "section_family": "HT_FLAT",
+      "length_mm": 164.0,
+      "qty": 8
+    },
+    "23H": {
+      "backmark": "23H",
+      "drawing_id": "429B23H",
+      "section": "HTL65x65x5",
+      "canonical_section": "HTL65x65x5",
+      "section_family": "HT_ANGLE",
+      "length_mm": 280.0,
+      "qty": 4
+    },
+    "24H": {
+      "backmark": "24H",
+      "drawing_id": "429B24H",
+      "section": "HTL45x45x5",
+      "canonical_section": "HTL45x45x5",
+      "section_family": "HT_ANGLE",
+      "length_mm": 2378.0,
+      "qty": 1
+    },
+    "25H": {
+      "backmark": "25H",
+      "drawing_id": "429B25H",
+      "section": "HTL45x45x5",
+      "canonical_section": "HTL45x45x5",
+      "section_family": "HT_ANGLE",
+      "length_mm": 2378.0,
+      "qty": 1
+    },
+    "26H": {
+      "backmark": "26H",
+      "drawing_id": "429B26H",
+      "section": "HTL150x150x12",
+      "canonical_section": "HTL150x150x12",
+      "section_family": "HT_ANGLE",
+      "length_mm": 4625.0,
+      "qty": 2
+    },
+    "27H": {
+      "backmark": "27H",
+      "drawing_id": "429B27H",
+      "section": "HTL150x150x12",
+      "canonical_section": "HTL150x150x12",
+      "section_family": "HT_ANGLE",
+      "length_mm": 4625.0,
+      "qty": 2
+    },
+    "28H": {
+      "backmark": "28H",
+      "drawing_id": "429B28H",
+      "section": "HTL130x130x10",
+      "canonical_section": "HTL130x130x10",
+      "section_family": "HT_ANGLE",
+      "length_mm": 476.0,
+      "qty": 4
+    },
+    "29H": {
+      "backmark": "29H",
+      "drawing_id": "429B29H",
+      "section": "HT8 thk x130",
+      "canonical_section": "FLAT 8x130",
+      "section_family": "HT_FLAT",
+      "length_mm": 476.0,
+      "qty": 8
+    },
+    "30": {
+      "backmark": "30",
+      "drawing_id": "429B30",
+      "section": "4 thk x94",
+      "canonical_section": "FLAT 4x94",
+      "section_family": "FLAT",
+      "length_mm": 234.0,
+      "qty": 8
+    },
+    "31": {
+      "backmark": "31",
+      "drawing_id": "429B31",
+      "section": "L55x55x5",
+      "canonical_section": "L55x55x5",
+      "section_family": "ANGLE",
+      "length_mm": 2366.0,
+      "qty": 2
+    },
+    "32": {
+      "backmark": "32",
+      "drawing_id": "429B32",
+      "section": "L55x55x5",
+      "canonical_section": "L55x55x5",
+      "section_family": "ANGLE",
+      "length_mm": 2366.0,
+      "qty": 2
+    },
+    "33": {
+      "backmark": "33",
+      "drawing_id": "429B33",
+      "section": "L50x50x5",
+      "canonical_section": "L50x50x5",
+      "section_family": "ANGLE",
+      "length_mm": 2366.0,
+      "qty": 2
+    },
+    "34": {
+      "backmark": "34",
+      "drawing_id": "429B34",
+      "section": "L50x50x5",
+      "canonical_section": "L50x50x5",
+      "section_family": "ANGLE",
+      "length_mm": 2366.0,
+      "qty": 2
+    },
+    "35": {
+      "backmark": "35",
+      "drawing_id": "429B35",
+      "section": "L55x55x5",
+      "canonical_section": "L55x55x5",
+      "section_family": "ANGLE",
+      "length_mm": 2294.0,
+      "qty": 2
+    },
+    "36": {
+      "backmark": "36",
+      "drawing_id": "429B36",
+      "section": "L55x55x5",
+      "canonical_section": "L55x55x5",
+      "section_family": "ANGLE",
+      "length_mm": 2294.0,
+      "qty": 2
+    },
+    "37": {
+      "backmark": "37",
+      "drawing_id": "429B37",
+      "section": "L50x50x5",
+      "canonical_section": "L50x50x5",
+      "section_family": "ANGLE",
+      "length_mm": 2294.0,
+      "qty": 2,
+      "hole_count": 6,
+      "hole_positions_mm": [27.0, 86.0, 327.0, 1197.0, 2213.0, 2267.0],
+      "per_piece": {
+        "M10": 5,
+        "M12": 1
+      },
+      "hole_diameters_mm": {
+        "11.5": 5,
+        "13.5": 1
+      },
+      "dimension_chain": {
+        "overall_length_mm": 2294.0,
+        "end_distance_1_mm": 27.0,
+        "pitch_intervals_mm": [59.0, 241.0, 870.0, 1016.0, 54.0],
+        "end_distance_2_mm": 27.0,
+        "gauge_mm": 28.0
+      }
+    },
+    "38": {
+      "backmark": "38",
+      "drawing_id": "429B38",
+      "section": "L50x50x5",
+      "canonical_section": "L50x50x5",
+      "section_family": "ANGLE",
+      "length_mm": 2294.0,
+      "qty": 2
+    },
+    "39H": {
+      "backmark": "39H",
+      "drawing_id": "429B39H",
+      "section": "HTL60x60x5",
+      "canonical_section": "HTL60x60x5",
+      "section_family": "HT_ANGLE",
+      "length_mm": 2178.0,
+      "qty": 2
+    },
+    "40H": {
+      "backmark": "40H",
+      "drawing_id": "429B40H",
+      "section": "HTL60x60x5",
+      "canonical_section": "HTL60x60x5",
+      "section_family": "HT_ANGLE",
+      "length_mm": 2178.0,
+      "qty": 2
+    },
+    "41": {
+      "backmark": "41",
+      "drawing_id": "429B41",
+      "section": "L50x50x5",
+      "canonical_section": "L50x50x5",
+      "section_family": "ANGLE",
+      "length_mm": 2178.0,
+      "qty": 2
+    },
+    "42": {
+      "backmark": "42",
+      "drawing_id": "429B42",
+      "section": "L50x50x5",
+      "canonical_section": "L50x50x5",
+      "section_family": "ANGLE",
+      "length_mm": 2178.0,
+      "qty": 2
+    },
+    "43": {
+      "backmark": "43",
+      "drawing_id": "429B43",
+      "section": "6 thk x99",
+      "canonical_section": "FLAT 6x99",
+      "section_family": "FLAT",
+      "length_mm": 215.0,
+      "qty": 2
+    },
+    "44": {
+      "backmark": "44",
+      "drawing_id": "429B44",
+      "section": "4 thk x45",
+      "canonical_section": "FLAT 4x45",
+      "section_family": "FLAT",
+      "length_mm": 1128.0,
+      "qty": 4,
+      "hole_count": 8,
+      "hole_positions_mm": [22.0, 226.0, 411.0, 476.0, 661.0, 726.0, 911.0, 1106.0],
+      "per_piece": {
+        "M12": 8
+      },
+      "hole_diameters_mm": {
+        "13.5": 8
+      },
+      "dimension_chain": {
+        "overall_length_mm": 1128.0,
+        "end_distance_1_mm": 22.0,
+        "pitch_intervals_mm": [204.0, 185.0, 65.0, 185.0, 65.0, 185.0, 195.0],
+        "end_distance_2_mm": 22.0,
+        "gauge_mm": 22.5
+      }
+    },
+    "45": {
+      "backmark": "45",
+      "drawing_id": "429B45",
+      "section": "4 thk x45",
+      "canonical_section": "FLAT 4x45",
+      "section_family": "FLAT",
+      "length_mm": 1280.0,
+      "qty": 2,
+      "hole_count": 6,
+      "hole_positions_mm": [22.0, 240.0, 590.0, 690.0, 940.0, 1258.0],
+      "per_piece": {
+        "M12": 6
+      },
+      "hole_diameters_mm": {
+        "13.5": 6
+      },
+      "dimension_chain": {
+        "overall_length_mm": 1280.0,
+        "end_distance_1_mm": 22.0,
+        "pitch_intervals_mm": [218.0, 350.0, 100.0, 250.0, 318.0],
+        "end_distance_2_mm": 22.0,
+        "gauge_mm": 22.5
+      }
+    },
+    "46": {
+      "backmark": "46",
+      "drawing_id": "429B46",
+      "section": "4 thk x45",
+      "canonical_section": "FLAT 4x45",
+      "section_family": "FLAT",
+      "length_mm": 664.0,
+      "qty": 4,
+      "hole_count": 4,
+      "hole_positions_mm": [22.0, 217.0, 447.0, 642.0],
+      "per_piece": {
+        "M12": 4
+      },
+      "hole_diameters_mm": {
+        "13.5": 4
+      },
+      "dimension_chain": {
+        "overall_length_mm": 664.0,
+        "end_distance_1_mm": 22.0,
+        "pitch_intervals_mm": [195.0, 230.0, 195.0],
+        "end_distance_2_mm": 22.0,
+        "gauge_mm": 22.5
+      }
+    }
+  },
+  "non_reference_members": [
+    "49H",
+    "50H",
+    "51",
+    "52",
+    "53",
+    "54",
+    "65",
+    "373H",
+    "374H",
+    "375H",
+    "376H"
+  ]
+}

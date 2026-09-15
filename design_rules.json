@@ -1,0 +1,45 @@
+{
+  "standard": "IS_802_TRANSMISSION_TOWER",
+  "hole_rules": [
+    {
+      "hole_diameter_mm": 11.5,
+      "min_pitch_mm": 25,
+      "min_edge_distance_mm": 20
+    },
+    {
+      "hole_diameter_mm": 13.5,
+      "min_pitch_mm": 27,
+      "min_edge_distance_mm": 22
+    },
+    {
+      "hole_diameter_mm": 17.5,
+      "min_pitch_mm": 32,
+      "min_edge_distance_mm": 26
+    },
+    {
+      "hole_diameter_mm": 22.0,
+      "min_pitch_mm": 40,
+      "min_edge_distance_mm": 32
+    },
+    {
+      "hole_diameter_mm": 26.0,
+      "min_pitch_mm": 45,
+      "min_edge_distance_mm": 38
+    }
+  ],
+  "angle_gauge_rules": {
+    "40": 22.0,
+    "45": 25.0,
+    "50": 28.0,
+    "55": 30.0,
+    "60": 35.0,
+    "65": 35.0,
+    "75": 40.0,
+    "90": 50.0,
+    "100": 55.0,
+    "110": 60.0,
+    "130": 70.0,
+    "150": 55.0,
+    "150_line2": 95.0
+  }
+}

@@ -1,0 +1,212 @@
+# ============================================================
+# Transmission Tower Engineering Automation
+# Git Ignore
+# ============================================================
+
+# ------------------------------------------------------------
+# Python
+# ------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+my_venv/
+.conda/
+
+# Packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# ------------------------------------------------------------
+# IDE / Editors
+# ------------------------------------------------------------
+.vscode/
+.idea/
+*.code-workspace
+
+# ------------------------------------------------------------
+# OS
+# ------------------------------------------------------------
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ------------------------------------------------------------
+# Python tooling / tests
+# ------------------------------------------------------------
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.ipynb_checkpoints/
+
+# ------------------------------------------------------------
+# Logs
+# ------------------------------------------------------------
+*.log
+pipeline.log
+logs/
+
+# ------------------------------------------------------------
+# Runtime / generated pipeline output
+# ------------------------------------------------------------
+pipeline_out/
+pipeline_out*/
+output/
+outputs/
+runs/
+tmp/
+temp/
+
+# ------------------------------------------------------------
+# Generated shop drawings
+# ------------------------------------------------------------
+shop_drawings/
+generated_drawings/
+
+# Generated drawing PDFs / images
+generated_*.pdf
+generated_*.png
+generated_*.jpg
+generated_*.jpeg
+
+# ------------------------------------------------------------
+# Generated reports
+# ------------------------------------------------------------
+detailed_shop_report.*
+shop_json_comparison.*
+group_report.*
+json_artifact_manifest.*
+generation_manifest.*
+regression_*.json
+regression_*.csv
+*_regression_report.*
+FOUR_DRAWING_GOLDEN_GATE.*
+
+# Visual regression artifacts
+visual_comparison/
+visual_regression/
+diff_*.png
+reference_*.png
+
+# ------------------------------------------------------------
+# Generated BOM
+# ------------------------------------------------------------
+job_bom.csv
+job_bom.json
+bom.csv
+bom.json
+
+# ------------------------------------------------------------
+# Local engineering / fabrication inputs
+# IMPORTANT:
+# Keep example/template files tracked.
+# Ignore actual local engineering data.
+# ------------------------------------------------------------
+connection_design.json
+*.design.json
+*.engineering.json
+approved_engineering.json
+engineering_input.json
+
+# ------------------------------------------------------------
+# Reference / validation data
+# ------------------------------------------------------------
+
+# Local copied reference shop JSON
+existing_shop_json/
+reference_shop_json/
+
+# Keep repository fixtures/golden data tracked if intentionally committed.
+# Do NOT ignore:
+# fixtures/
+# tests/
+# golden/
+
+# ------------------------------------------------------------
+# CAD / drawings
+# ------------------------------------------------------------
+
+# Keep these UNCOMMENTED if DXF/PDF inputs are part of the repository.
+# Uncomment only if these are large/local-only files.
+
+# *.dxf
+# *.dwg
+# *.png
+# *.jpg
+# *.jpeg
+# *.pdf
+
+# ------------------------------------------------------------
+# Databases / caches
+# ------------------------------------------------------------
+*.db
+*.sqlite
+*.sqlite3
+
+# ------------------------------------------------------------
+# Secrets / credentials
+# ------------------------------------------------------------
+.env
+.env.*
+!.env.example
+
+*.pem
+*.key
+secrets/
+credentials/
+
+# ------------------------------------------------------------
+# ML / AI artifacts
+# ------------------------------------------------------------
+
+# Local trained models
+models/
+checkpoints/
+weights/
+
+# Experiment tracking
+mlruns/
+wandb/
+runs_ml/
+
+# Local datasets
+datasets/
+data/local/
+data/raw_local/
+
+# Model caches
+.huggingface/
+.cache/
+transformers_cache/
+
+# ------------------------------------------------------------
+# Jupyter
+# ------------------------------------------------------------
+*.ipynb_checkpoints/
+
+# ------------------------------------------------------------
+# Temporary / backup files
+# ------------------------------------------------------------
+*.bak
+*.tmp
+*.swp
+*.swo
+*~
+
+# ------------------------------------------------------------
+# Python build/cache extras
+# ------------------------------------------------------------
+.pyre/
+.pytype/
+.pyright/

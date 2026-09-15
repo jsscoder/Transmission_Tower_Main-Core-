@@ -1,0 +1,28 @@
+{
+  "job": "WO_XXX",
+  "members": [
+    {
+      "backmark": "EXAMPLE",
+      "section": "L50x50x5",
+      "length_mm": 1000,
+      "qty": 2,
+      "ends": {
+        "E1": {
+          "holes": [
+            {"along_mm": 35, "hole_diameter_mm": 11.5, "edge_distance_mm": 25, "nominal_bolt_diameter_mm": 10}
+          ]
+        },
+        "E2": {
+          "pattern": {
+            "count": 3,
+            "hole_diameter_mm": 13.5,
+            "nominal_bolt_diameter_mm": 12,
+            "start_from_end_mm": 35,
+            "pitch_mm": 40,
+            "edge_distance_mm": 25
+          }
+        }
+      }
+    }
+  ]
+}
