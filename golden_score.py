@@ -95,10 +95,24 @@ def score_metadata(gen: dict, ref: dict) -> tuple[float, list[str]]:
     else:
         diffs.append(f"backmark: gen={gen_bm} ref={ref_bm}")
 
-    # Section (normalize for comparison)
-    gen_sec = _normalize_section(str(gen.get("section", "")))
-    ref_sec = _normalize_section(str(ref.get("canonical_section", ref.get("section", ""))))
-    if gen_sec == ref_sec:
+    # Section comparison using structural parsing
+    from shop_drawing import _parse_section
+    p_gen = _parse_section(gen.get("section", ""))
+    p_ref = _parse_section(ref.get("canonical_section", ref.get("section", "")))
+    
+    sections_match = False
+    if p_gen.get("kind") == p_ref.get("kind") and p_gen.get("kind") != "UNKNOWN":
+        if p_gen["kind"] == "FLAT":
+            t_match = abs(p_gen.get("thickness_mm", 0) - p_ref.get("thickness_mm", 0)) < 0.5
+            w_match = abs(p_gen.get("width_mm", 0) - p_ref.get("width_mm", 0)) < 0.5
+            sections_match = t_match and w_match
+        elif p_gen["kind"] == "ANGLE":
+            a_match = abs(p_gen.get("leg_a_mm", 0) - p_ref.get("leg_a_mm", 0)) < 0.5
+            b_match = abs(p_gen.get("leg_b_mm", 0) - p_ref.get("leg_b_mm", 0)) < 0.5
+            t_match = abs(p_gen.get("thickness_mm", 0) - p_ref.get("thickness_mm", 0)) < 0.5
+            sections_match = a_match and b_match and t_match
+
+    if sections_match:
         score += 25.0
     else:
         # Partial match — same family?
@@ -305,18 +319,21 @@ def score_geometry(dxf_path: str | Path, section_info: dict) -> tuple[float, lis
         else:
             diffs.append("end_geometry: insufficient outline")
 
-    # Hidden lines (dashed linetype in SHOP_MEMBER)
-    has_dashed = False
-    for entity in msp:
-        if entity.dxf.layer == "SHOP_MEMBER":
-            lt = getattr(entity.dxf, "linetype", None)
-            if lt and "DASH" in str(lt).upper():
-                has_dashed = True
-                break
-    if has_dashed:
-        score += 15.0
+    # Hidden lines (dashed linetype in SHOP_MEMBER for angles)
+    if kind == "FLAT":
+        score += 15.0  # Solid rectangular bar elevation has no hidden edges
     else:
-        diffs.append("hidden_lines: no dashed lines found")
+        has_dashed = False
+        for entity in msp:
+            if entity.dxf.layer == "SHOP_MEMBER":
+                lt = getattr(entity.dxf, "linetype", None)
+                if lt and "DASH" in str(lt).upper():
+                    has_dashed = True
+                    break
+        if has_dashed:
+            score += 15.0
+        else:
+            diffs.append("hidden_lines: no dashed lines found")
 
     # Centerlines (SHOP_CENTER layer)
     center_count = layer_counts.get("SHOP_CENTER", 0)
