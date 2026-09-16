@@ -1,7 +1,8 @@
 # ============================================================
 # Transmission Tower Engineering Automation
-# Git Ignore
+# Git Ignore - Python + Node.js + Next.js
 # ============================================================
+
 
 # ------------------------------------------------------------
 # Python
@@ -25,12 +26,74 @@ dist/
 *.egg-info/
 .eggs/
 
+
+# ------------------------------------------------------------
+# Node.js
+# ------------------------------------------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+.npm/
+.yarn/
+.pnpm-store/
+
+# Optional local package-manager files
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+
+# ------------------------------------------------------------
+# Next.js
+# ------------------------------------------------------------
+.next/
+.next/*
+out/
+.vercel/
+
+# Next.js build/cache
+.swc/
+.turbo/
+
+# Next.js generated environment/build files
+next-env.d.ts
+
+
+# ------------------------------------------------------------
+# Frontend / Node Runtime
+# ------------------------------------------------------------
+*.tsbuildinfo
+
+coverage/
+.nyc_output/
+
+# Runtime / local job data
+web-runtime/
+runtime/
+server-runtime/
+
+# Generated frontend artifacts
+public/generated/
+public/output/
+public/uploads/
+public/artifacts/
+
+
 # ------------------------------------------------------------
 # IDE / Editors
 # ------------------------------------------------------------
 .vscode/
 .idea/
 *.code-workspace
+*.sublime-project
+*.sublime-workspace
+
 
 # ------------------------------------------------------------
 # OS
@@ -38,6 +101,7 @@ dist/
 .DS_Store
 Thumbs.db
 Desktop.ini
+
 
 # ------------------------------------------------------------
 # Python tooling / tests
@@ -50,12 +114,18 @@ Desktop.ini
 htmlcov/
 .ipynb_checkpoints/
 
+.pyre/
+.pytype/
+.pyright/
+
+
 # ------------------------------------------------------------
 # Logs
 # ------------------------------------------------------------
 *.log
 pipeline.log
 logs/
+
 
 # ------------------------------------------------------------
 # Runtime / generated pipeline output
@@ -68,17 +138,23 @@ runs/
 tmp/
 temp/
 
+# Job-specific generated data
+jobs/
+job_data/
+job_outputs/
+
+
 # ------------------------------------------------------------
 # Generated shop drawings
 # ------------------------------------------------------------
 shop_drawings/
 generated_drawings/
 
-# Generated drawing PDFs / images
 generated_*.pdf
 generated_*.png
 generated_*.jpg
 generated_*.jpeg
+
 
 # ------------------------------------------------------------
 # Generated reports
@@ -88,16 +164,18 @@ shop_json_comparison.*
 group_report.*
 json_artifact_manifest.*
 generation_manifest.*
+
 regression_*.json
 regression_*.csv
 *_regression_report.*
 FOUR_DRAWING_GOLDEN_GATE.*
 
-# Visual regression artifacts
+# Visual regression
 visual_comparison/
 visual_regression/
 diff_*.png
 reference_*.png
+
 
 # ------------------------------------------------------------
 # Generated BOM
@@ -106,6 +184,7 @@ job_bom.csv
 job_bom.json
 bom.csv
 bom.json
+
 
 # ------------------------------------------------------------
 # Local engineering / fabrication inputs
@@ -119,6 +198,7 @@ connection_design.json
 approved_engineering.json
 engineering_input.json
 
+
 # ------------------------------------------------------------
 # Reference / validation data
 # ------------------------------------------------------------
@@ -127,18 +207,18 @@ engineering_input.json
 existing_shop_json/
 reference_shop_json/
 
-# Keep repository fixtures/golden data tracked if intentionally committed.
-# Do NOT ignore:
+# Keep these tracked when committed intentionally:
 # fixtures/
 # tests/
 # golden/
+
 
 # ------------------------------------------------------------
 # CAD / drawings
 # ------------------------------------------------------------
 
-# Keep these UNCOMMENTED if DXF/PDF inputs are part of the repository.
-# Uncomment only if these are large/local-only files.
+# Keep UNCOMMENTED if CAD/drawings are repository inputs.
+# Uncomment if these are local/large files only.
 
 # *.dxf
 # *.dwg
@@ -147,12 +227,14 @@ reference_shop_json/
 # *.jpeg
 # *.pdf
 
+
 # ------------------------------------------------------------
 # Databases / caches
 # ------------------------------------------------------------
 *.db
 *.sqlite
 *.sqlite3
+
 
 # ------------------------------------------------------------
 # Secrets / credentials
@@ -163,37 +245,37 @@ reference_shop_json/
 
 *.pem
 *.key
+
 secrets/
 credentials/
+
 
 # ------------------------------------------------------------
 # ML / AI artifacts
 # ------------------------------------------------------------
 
-# Local trained models
 models/
 checkpoints/
 weights/
 
-# Experiment tracking
 mlruns/
 wandb/
 runs_ml/
 
-# Local datasets
 datasets/
 data/local/
 data/raw_local/
 
-# Model caches
 .huggingface/
 .cache/
 transformers_cache/
+
 
 # ------------------------------------------------------------
 # Jupyter
 # ------------------------------------------------------------
 *.ipynb_checkpoints/
+
 
 # ------------------------------------------------------------
 # Temporary / backup files
@@ -204,9 +286,30 @@ transformers_cache/
 *.swo
 *~
 
+# Python bytecode extras
+*.pyo
+*.pyd
+
+
 # ------------------------------------------------------------
-# Python build/cache extras
+# Docker / local environment
 # ------------------------------------------------------------
-.pyre/
-.pytype/
-.pyright/
+docker-compose.override.yml
+.docker/
+
+
+# ------------------------------------------------------------
+# Local configuration
+# ------------------------------------------------------------
+*.local
+*.local.json
+
+
+# ------------------------------------------------------------
+# Generated metadata
+# ------------------------------------------------------------
+*.pid
+*.pid.lock
+*.seed
+
+.DS_Store
