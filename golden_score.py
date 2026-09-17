@@ -54,24 +54,29 @@ WEIGHTS_NO_VISUAL = {
 # REFERENCE DATA LOADER
 # ============================================================
 
-def load_reference(fixtures_dir: str | Path) -> dict[str, dict]:
-    """Load reference metadata for the 4 golden members."""
+DEFAULT_GOLDEN_MEMBERS = ("30", "31", "32", "33", "34", "37", "44", "45", "46")
+
+
+def load_reference(fixtures_dir: str | Path, target_members: tuple[str, ...] | None = None) -> dict[str, dict]:
+    """Load reference metadata for the golden members."""
     fixtures_dir = Path(fixtures_dir)
     ref_path = fixtures_dir / "reference_metadata_26.json"
     data = json.loads(ref_path.read_text(encoding="utf-8"))
     members = data.get("reference_members", {})
+    targets = target_members or DEFAULT_GOLDEN_MEMBERS
     golden = {}
-    for bm in ("37", "44", "45", "46"):
+    for bm in targets:
         if bm in members:
             golden[bm] = members[bm]
     return golden
 
 
-def load_generated(shop_dir: str | Path) -> dict[str, dict]:
-    """Load generated JSON sidecars for the 4 golden members."""
+def load_generated(shop_dir: str | Path, target_members: tuple[str, ...] | None = None) -> dict[str, dict]:
+    """Load generated JSON sidecars for the golden members."""
     shop_dir = Path(shop_dir)
+    targets = target_members or DEFAULT_GOLDEN_MEMBERS
     golden = {}
-    for bm in ("37", "44", "45", "46"):
+    for bm in targets:
         json_path = shop_dir / f"429B{bm}.json"
         if json_path.exists():
             golden[bm] = json.loads(json_path.read_text(encoding="utf-8"))
@@ -715,16 +720,18 @@ def run_golden_gate(
     fixtures_dir: str | Path,
     shop_dir: str | Path,
     ref_pdf_dir: str | Path | None = None,
+    target_members: tuple[str, ...] | None = None,
 ) -> dict[str, Any]:
-    """Run the full golden gate evaluation for all 4 drawings."""
-    refs = load_reference(fixtures_dir)
-    gens = load_generated(shop_dir)
+    """Run the full golden gate evaluation for golden drawings."""
+    targets = target_members or DEFAULT_GOLDEN_MEMBERS
+    refs = load_reference(fixtures_dir, targets)
+    gens = load_generated(shop_dir, targets)
     shop_dir = Path(shop_dir)
 
     results = []
     all_pass = True
 
-    for bm in ("37", "44", "45", "46"):
+    for bm in targets:
         if bm not in gens:
             results.append({
                 "drawing_id": f"429B{bm}",

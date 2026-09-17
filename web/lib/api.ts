@@ -3,6 +3,7 @@ import {
   PipelineMetrics,
   MemberItem,
   LocatorItem,
+  LocatorsSummary,
   TopologyJoint,
   CandidateItem,
   ShopDrawingItem,
@@ -11,7 +12,7 @@ import {
   ReviewItem
 } from '@/types';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+export const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export async function fetchJobs(): Promise<Job[]> {
   const res = await fetch(`${API_BASE}/api/jobs`, { cache: 'no-store' });
@@ -75,9 +76,16 @@ export async function fetchMembers(jobId: string): Promise<MemberItem[]> {
   return res.json();
 }
 
-export async function fetchLocators(jobId: string): Promise<LocatorItem[]> {
-  const res = await fetch(`${API_BASE}/api/jobs/${jobId}/locators`, { cache: 'no-store' });
+export async function fetchLocators(jobId: string, kind?: string): Promise<LocatorItem[]> {
+  const url = kind ? `${API_BASE}/api/jobs/${jobId}/locators?kind=${kind}` : `${API_BASE}/api/jobs/${jobId}/locators`;
+  const res = await fetch(url, { cache: 'no-store' });
   if (!res.ok) throw new Error('Failed to fetch locators');
+  return res.json();
+}
+
+export async function fetchLocatorsSummary(jobId: string): Promise<LocatorsSummary> {
+  const res = await fetch(`${API_BASE}/api/jobs/${jobId}/locators/summary`, { cache: 'no-store' });
+  if (!res.ok) throw new Error('Failed to fetch locators summary');
   return res.json();
 }
 

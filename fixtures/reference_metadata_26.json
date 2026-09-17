@@ -88,7 +88,22 @@
       "canonical_section": "FLAT 4x94",
       "section_family": "FLAT",
       "length_mm": 234.0,
-      "qty": 8
+      "qty": 8,
+      "hole_count": 5,
+      "hole_positions_mm": [27.0, 72.0, 117.0, 162.0, 207.0],
+      "per_piece": {
+        "M16": 5
+      },
+      "hole_diameters_mm": {
+        "17.5": 5
+      },
+      "dimension_chain": {
+        "overall_length_mm": 234.0,
+        "end_distance_1_mm": 27.0,
+        "pitch_intervals_mm": [45.0, 45.0, 45.0, 45.0],
+        "end_distance_2_mm": 27.0,
+        "gauge_mm": 27.0
+      }
     },
     "31": {
       "backmark": "31",
@@ -97,7 +112,22 @@
       "canonical_section": "L55x55x5",
       "section_family": "ANGLE",
       "length_mm": 2366.0,
-      "qty": 2
+      "qty": 2,
+      "hole_count": 5,
+      "hole_positions_mm": [27.0, 78.0, 1227.0, 2287.0, 2339.0],
+      "per_piece": {
+        "M16": 5
+      },
+      "hole_diameters_mm": {
+        "17.5": 5
+      },
+      "dimension_chain": {
+        "overall_length_mm": 2366.0,
+        "end_distance_1_mm": 27.0,
+        "pitch_intervals_mm": [51.0, 1149.0, 1060.0, 52.0],
+        "end_distance_2_mm": 27.0,
+        "gauge_mm": 30.0
+      }
     },
     "32": {
       "backmark": "32",
@@ -106,7 +136,22 @@
       "canonical_section": "L55x55x5",
       "section_family": "ANGLE",
       "length_mm": 2366.0,
-      "qty": 2
+      "qty": 2,
+      "hole_count": 5,
+      "hole_positions_mm": [27.0, 78.0, 1227.0, 2287.0, 2339.0],
+      "per_piece": {
+        "M16": 5
+      },
+      "hole_diameters_mm": {
+        "17.5": 5
+      },
+      "dimension_chain": {
+        "overall_length_mm": 2366.0,
+        "end_distance_1_mm": 27.0,
+        "pitch_intervals_mm": [51.0, 1149.0, 1060.0, 52.0],
+        "end_distance_2_mm": 27.0,
+        "gauge_mm": 30.0
+      }
     },
     "33": {
       "backmark": "33",
@@ -115,7 +160,22 @@
       "canonical_section": "L50x50x5",
       "section_family": "ANGLE",
       "length_mm": 2366.0,
-      "qty": 2
+      "qty": 2,
+      "hole_count": 5,
+      "hole_positions_mm": [27.0, 78.0, 1227.0, 2287.0, 2339.0],
+      "per_piece": {
+        "M16": 5
+      },
+      "hole_diameters_mm": {
+        "17.5": 5
+      },
+      "dimension_chain": {
+        "overall_length_mm": 2366.0,
+        "end_distance_1_mm": 27.0,
+        "pitch_intervals_mm": [51.0, 1149.0, 1060.0, 52.0],
+        "end_distance_2_mm": 27.0,
+        "gauge_mm": 25.0
+      }
     },
     "34": {
       "backmark": "34",
@@ -124,7 +184,22 @@
       "canonical_section": "L50x50x5",
       "section_family": "ANGLE",
       "length_mm": 2366.0,
-      "qty": 2
+      "qty": 2,
+      "hole_count": 5,
+      "hole_positions_mm": [27.0, 78.0, 1227.0, 2287.0, 2339.0],
+      "per_piece": {
+        "M16": 5
+      },
+      "hole_diameters_mm": {
+        "17.5": 5
+      },
+      "dimension_chain": {
+        "overall_length_mm": 2366.0,
+        "end_distance_1_mm": 27.0,
+        "pitch_intervals_mm": [51.0, 1149.0, 1060.0, 52.0],
+        "end_distance_2_mm": 27.0,
+        "gauge_mm": 25.0
+      }
     },
     "35": {
       "backmark": "35",

@@ -16,10 +16,15 @@ DESIGNATION_LAYER='23_Member designation'
 BACKMARK_RE=re.compile(r'^\d{1,4}[A-Z]{0,2}$')
 
 
+def _normalize_layer(name: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", name.lower())
+
+
 def _designation_texts(msp):
     marks=[]; desc=[]
+    target_layer = _normalize_layer(DESIGNATION_LAYER)
     for e in msp.query('TEXT'):
-        if e.dxf.layer!=DESIGNATION_LAYER: continue
+        if _normalize_layer(e.dxf.layer) != target_layer: continue
         t=e.dxf.text.strip(); p=(float(e.dxf.insert.x),float(e.dxf.insert.y))
         if BACKMARK_RE.fullmatch(t): marks.append((t,p))
         elif '..' in t: desc.append((t,p))
@@ -41,8 +46,9 @@ def _pair_descriptions(marks, descs):
 
 def _designation_lines(msp):
     adj=defaultdict(list); edges=[]
+    target_layer = _normalize_layer(DESIGNATION_LAYER)
     for e in msp.query('LINE'):
-        if e.dxf.layer!=DESIGNATION_LAYER: continue
+        if _normalize_layer(e.dxf.layer) != target_layer: continue
         a=(round(e.dxf.start.x,1),round(e.dxf.start.y,1));b=(round(e.dxf.end.x,1),round(e.dxf.end.y,1))
         adj[a].append(b);adj[b].append(a);edges.append((a,b))
     return adj,edges
@@ -53,7 +59,7 @@ def _point_segment_distance(p,a,b):
     t=max(0.0,min(1.0,t));q=(a[0]+t*dx,a[1]+t*dy)
     return math.dist(p,q)
 
-def _leader_anchors(desc_point, adj, edges, max_seed_distance=260):
+def _leader_anchors(desc_point, adj, edges, max_seed_distance=260.0):
     if not edges: return []
     # Seed from the nearest DESIGNATION line segment, rather than its nearest
     # endpoint. This matters when the text sits beside the middle of a leader.
@@ -80,7 +86,15 @@ def _rect_distance(point, group, width=250.66, height=71.39):
     return math.hypot(dx,dy)
 
 
-def associate(dxf_path, radius=450):
+def associate(dxf_path, radius=None, scale_factor=1.0):
+    if radius is None:
+        try:
+            from scale_context import ScaleContext
+            ctx = ScaleContext.from_dxf(dxf_path)
+            radius = ctx.callout_search_radius_mm
+            scale_factor = ctx.scale_factor
+        except Exception:
+            radius = 450.0
     doc,_=recover.readfile(dxf_path);msp=doc.modelspace()
     marks,descs=_designation_texts(msp);pairs=_pair_descriptions(marks,descs)
     adj,edges=_designation_lines(msp)
@@ -91,7 +105,7 @@ def associate(dxf_path, radius=450):
     } for i,g in enumerate(group_stacked_callouts(extract_bolt_callouts(dxf_path)))]
     result={}
     for mark,(dt,dp,pair_d) in pairs.items():
-        anchors=_leader_anchors(dp,adj,edges)
+        anchors=_leader_anchors(dp,adj,edges,max_seed_distance=260.0*scale_factor)
         # If no explicit leader, use the backmark itself as a weak anchor.
         if not anchors:
             mp=next(p for mm,p in marks if mm==mark)

@@ -90,12 +90,31 @@ class MemberItem(BaseModel):
 
 class LocatorItem(BaseModel):
     member_backmark: str
-    source_entity: str = "TEXT"
+    source_entity: str = "MEMBER_LOCATOR"
     x: float = 0.0
     y: float = 0.0
     confidence: float = 1.0
     associated_member: Optional[str] = None
-    association_status: str = "ASSOCIATED"
+    association_status: str = "LOCATED"
+    section: Optional[str] = None
+    length_mm: Optional[float] = None
+    inferred: bool = False
+    inferred_from: Optional[str] = None
+    image_url: Optional[str] = None
+    has_crop: bool = False
+    raw_text: Optional[str] = None
+    bolt_count: Optional[int] = None
+    diameter_mm: Optional[float] = None
+    group_id: Optional[str] = None
+
+
+class LocatorsSummary(BaseModel):
+    assembly_image_url: Optional[str] = None
+    total_locators: int = 0
+    total_members: int = 0
+    total_callouts: int = 0
+    items: list[LocatorItem] = Field(default_factory=list)
+
 
 
 class TopologyJoint(BaseModel):
@@ -151,6 +170,15 @@ class BOMItem(BaseModel):
     status: str = "VALIDATED"
 
 
+class ComparisonRow(BaseModel):
+    property: str
+    actual_reference: str
+    generated_cad: str
+    status: str
+    variance: Optional[str] = None
+    is_match: bool = True
+
+
 class RegressionDrawingScore(BaseModel):
     drawing_id: str
     backmark: str
@@ -168,6 +196,7 @@ class RegressionDrawingScore(BaseModel):
     preview_url: Optional[str] = None
     reference_url: Optional[str] = None
     diff_url: Optional[str] = None
+    comparison_table: list[ComparisonRow] = Field(default_factory=list)
 
 
 class ReviewItem(BaseModel):

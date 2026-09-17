@@ -48,5 +48,65 @@
     "hole_diameters_mm": {
       "13.5": 4
     }
+  },
+  "429B30": {
+    "source_backmark": "30",
+    "member": "4 thk x94",
+    "length_mm": 234,
+    "qty": 8,
+    "per_piece": {
+      "M16": 5
+    },
+    "hole_diameters_mm": {
+      "17.5": 5
+    }
+  },
+  "429B31": {
+    "source_backmark": "31",
+    "member": "L55x55x5",
+    "length_mm": 2366,
+    "qty": 2,
+    "per_piece": {
+      "M16": 5
+    },
+    "hole_diameters_mm": {
+      "17.5": 5
+    }
+  },
+  "429B32": {
+    "source_backmark": "32",
+    "member": "L55x55x5",
+    "length_mm": 2366,
+    "qty": 2,
+    "per_piece": {
+      "M16": 5
+    },
+    "hole_diameters_mm": {
+      "17.5": 5
+    }
+  },
+  "429B33": {
+    "source_backmark": "33",
+    "member": "L50x50x5",
+    "length_mm": 2366,
+    "qty": 2,
+    "per_piece": {
+      "M16": 5
+    },
+    "hole_diameters_mm": {
+      "17.5": 5
+    }
+  },
+  "429B34": {
+    "source_backmark": "34",
+    "member": "L50x50x5",
+    "length_mm": 2366,
+    "qty": 2,
+    "per_piece": {
+      "M16": 5
+    },
+    "hole_diameters_mm": {
+      "17.5": 5
+    }
   }
 }

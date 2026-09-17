@@ -67,7 +67,7 @@ def _run_job_worker(job_id: str, loop: asyncio.AbstractEventLoop) -> None:
     )
 
     dxf_path = job.parameters.get("dxf_path")
-    eng_input = job.parameters.get("engineering_input_path") or str(DEFAULT_DESIGN_INPUT)
+    custom_eng_input = job.parameters.get("engineering_input_path")
     rules_path = str(DEFAULT_RULES)
     output_dir = Path(job.output_dir)
     log_file_path = output_dir.parent / "logs" / "engine.log"
@@ -77,10 +77,22 @@ def _run_job_worker(job_id: str, loop: asyncio.AbstractEventLoop) -> None:
         str(INFERENCE_SCRIPT),
         "--dxf", str(dxf_path),
         "--out", str(output_dir),
-        "--engineering-input", str(eng_input),
         "--rules", str(rules_path),
         "--generate",
     ]
+
+    if custom_eng_input:
+        cmd.extend(["--engineering-input", str(custom_eng_input)])
+    else:
+        dxf_name = Path(dxf_path).name.lower() if dxf_path else ""
+        if "429" in dxf_name or "wo_429" in dxf_name:
+            cmd.extend(["--engineering-input", str(DEFAULT_DESIGN_INPUT)])
+        else:
+            cmd.append("--orchestrate")
+
+    if job.parameters.get("orchestrate"):
+        if "--orchestrate" not in cmd:
+            cmd.append("--orchestrate")
 
     start_time = time.time()
     completed_stages: list[str] = ["UPLOAD"]

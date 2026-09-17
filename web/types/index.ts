@@ -80,6 +80,24 @@ export interface LocatorItem {
   confidence: number;
   associated_member?: string;
   association_status: string;
+  section?: string;
+  length_mm?: number;
+  inferred?: boolean;
+  inferred_from?: string;
+  image_url?: string;
+  has_crop?: boolean;
+  raw_text?: string;
+  bolt_count?: number;
+  diameter_mm?: number;
+  group_id?: string;
+}
+
+export interface LocatorsSummary {
+  assembly_image_url: string | null;
+  total_locators: number;
+  total_members: number;
+  total_callouts: number;
+  items: LocatorItem[];
 }
 
 export interface TopologyJoint {
@@ -135,6 +153,15 @@ export interface BOMItem {
   status: string;
 }
 
+export interface ComparisonRow {
+  property: string;
+  actual_reference: string;
+  generated_cad: string;
+  status: string;
+  variance?: string;
+  is_match: boolean;
+}
+
 export interface RegressionDrawingScore {
   drawing_id: string;
   backmark: string;
@@ -152,6 +179,7 @@ export interface RegressionDrawingScore {
   preview_url?: string;
   reference_url?: string;
   diff_url?: string;
+  comparison_table?: ComparisonRow[];
 }
 
 export interface ReviewItem {

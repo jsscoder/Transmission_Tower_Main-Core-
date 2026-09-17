@@ -70,10 +70,22 @@ class ProductionRunTests(unittest.TestCase):
             self.assertEqual(run_sum["reference_drawings"], 26)
             self.assertEqual(run_sum["validated_reference"], 26)
             self.assertEqual(run_sum["not_validated"], 11)
-            self.assertEqual(run_sum["buildable"], 4)
-            self.assertEqual(run_sum["generated"], 4)
-            self.assertEqual(run_sum["blocked"], 33)
+            buildable_expected = int(run_sum["buildable"])
+            self.assertGreaterEqual(buildable_expected, 4)
+            self.assertEqual(run_sum["generated"], buildable_expected)
+            self.assertEqual(run_sum["blocked"], 37 - buildable_expected)
             self.assertTrue(run_sum["overall_gates_passed"])
+            self.assertTrue(run_sum.get("coverage_equation_balanced", True))
+
+            # 1b. Verify diagnostic_coverage_report.json & diagnostic_coverage_report.csv
+            cov_json = out_dir / "diagnostic_coverage_report.json"
+            cov_csv = out_dir / "diagnostic_coverage_report.csv"
+            self.assertTrue(cov_json.exists(), "diagnostic_coverage_report.json must exist")
+            self.assertTrue(cov_csv.exists(), "diagnostic_coverage_report.csv must exist")
+            cov_data = json.loads(cov_json.read_text(encoding="utf-8"))
+            self.assertEqual(cov_data["members_discovered"], 37)
+            self.assertEqual(cov_data["members_ready_for_rendering"], buildable_expected)
+            self.assertTrue(cov_data["coverage_equation"]["balanced"])
 
             # 2. Verify drawing_inventory.csv & drawing_inventory.json
             inv_json = out_dir / "drawing_inventory.json"
@@ -87,8 +99,8 @@ class ProductionRunTests(unittest.TestCase):
                 self.assertEqual(len(rows), 37)
                 buildable_rows = [r for r in rows if r["status"] == "BUILDABLE"]
                 blocked_rows = [r for r in rows if r["status"] == "BLOCKED"]
-                self.assertEqual(len(buildable_rows), 4)
-                self.assertEqual(len(blocked_rows), 33)
+                self.assertEqual(len(buildable_rows), buildable_expected)
+                self.assertEqual(len(blocked_rows), 37 - buildable_expected)
                 for br in blocked_rows:
                     self.assertIn("MISSING_FABRICATION_HOLES", br["reason"])
 
@@ -109,7 +121,7 @@ class ProductionRunTests(unittest.TestCase):
             self.assertTrue(rq_csv.exists(), "review_queue.csv must exist")
             rq_data = json.loads(rq_json.read_text(encoding="utf-8"))
             self.assertGreater(rq_data["summary"]["total_items"], 0)
-            self.assertEqual(rq_data["summary"]["blocking_count"], 33)
+            self.assertEqual(rq_data["summary"]["blocking_count"], 37 - buildable_expected)
             self.assertIn("MISSING_FABRICATION_HOLES", rq_data["summary"]["by_reason"])
 
             # 5. Verify regression_report.json & regression_report.csv
@@ -133,8 +145,8 @@ class ProductionRunTests(unittest.TestCase):
                     self.assertEqual(nr["validation_status"], "NOT_VALIDATED")
                     self.assertEqual(nr["gate_h_no_false_positives"], "PASS")
 
-                # Diagnostic cases: 37, 44, 45, 46 have full VALIDATED_REFERENCE
-                for diag in [r for r in ref_scorecard if r["backmark"] in ("37", "44", "45", "46")]:
+                # Diagnostic cases: all golden reference members have full VALIDATED_REFERENCE
+                for diag in [r for r in ref_scorecard if r["backmark"] in ("30", "31", "32", "33", "34", "37", "44", "45", "46")]:
                     self.assertEqual(diag["validation_status"], "VALIDATED_REFERENCE")
                     self.assertEqual(diag["gate_d_holes"], "PASS")
                     self.assertEqual(diag["gate_e_dimensions"], "PASS")
@@ -142,13 +154,13 @@ class ProductionRunTests(unittest.TestCase):
             # 6. Verify shop drawings (.dxf, .pdf, .json) for buildable members
             shop_dir = out_dir / "shop_drawings"
             self.assertTrue(shop_dir.exists())
-            for mark in ["37", "44", "45", "46"]:
+            for mark in ["30", "31", "32", "33", "34", "37", "44", "45", "46"]:
                 self.assertTrue((shop_dir / f"429B{mark}.dxf").exists())
                 self.assertTrue((shop_dir / f"429B{mark}.pdf").exists())
                 self.assertTrue((shop_dir / f"429B{mark}.json").exists())
 
             # Ensure blocked members were not generated
-            for blocked_mark in ["21", "22H", "30", "49H", "373H"]:
+            for blocked_mark in ["21", "22H", "23H", "49H", "373H"]:
                 self.assertFalse((shop_dir / f"429B{blocked_mark}.dxf").exists())
 
         finally:

@@ -221,6 +221,7 @@ class Member:
     quantity_source: str | None = None
     ends: dict[str, MemberEnd] = field(default_factory=dict)
     status: ValidationState = ValidationState.EXTRACTED
+    reasons: list[str] = field(default_factory=list)
     provenance: ProvenanceRecord | None = None
 
     def to_dict(self) -> dict[str, Any]:
@@ -234,6 +235,7 @@ class Member:
             "quantity_source": self.quantity_source,
             "ends": {k: v.to_dict() if hasattr(v, "to_dict") else v for k, v in sorted(self.ends.items())},
             "status": self.status.value if isinstance(self.status, ValidationState) else str(self.status),
+            "reasons": list(self.reasons),
             "provenance": self.provenance.to_dict() if hasattr(self.provenance, "to_dict") else self.provenance,
         }
 
@@ -267,6 +269,11 @@ class Member:
                     ends_dict[eid] = MemberEnd.from_dict(v, end_id=eid, backmark=mark)
 
         status = ValidationState.from_str(data.get("status"))
+        raw_reasons = data.get("reasons", [])
+        reasons = [str(r) for r in raw_reasons] if isinstance(raw_reasons, list) else []
+        if not reasons and data.get("reason"):
+            reasons = [str(data.get("reason"))]
+
         prov = data.get("provenance")
         if isinstance(prov, ProvenanceRecord):
             provenance = prov
@@ -284,6 +291,7 @@ class Member:
             quantity_source=data.get("quantity_source"),
             ends=ends_dict,
             status=status,
+            reasons=reasons,
             provenance=provenance,
         )
 

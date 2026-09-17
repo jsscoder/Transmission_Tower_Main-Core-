@@ -17,6 +17,11 @@ MEMBER_LAYER = "3_Members"
 DESIGNATION_LAYER = "23_Member designation"
 BACKMARK_RE = re.compile(r"^\d{1,4}[A-Z]{0,2}$")
 
+
+def _normalize_layer(name: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", name.lower())
+
+
 @dataclass(frozen=True)
 class Segment:
     index: int
@@ -59,15 +64,27 @@ def section_info(section):
     # FLAT 4x45 / 4X45
     m=re.search(r"^(?:FLAT)?(\d+(?:\.\d+)?)X(\d+(?:\.\d+)?)",s)
     if m: return {"kind":"FLAT","thickness_mm":float(m.group(1)),"width_mm":float(m.group(2))}
-    return {"kind":"UNKNOWN","width_mm":None}
+    # Plate forms: PL6 thk x97, 6 thk x104
+    m=re.search(r"^(?:PL)?(\d+(?:\.\d+)?)\s*THK\s*X\s*(\d+(?:\.\d+)?)",s)
+    if m: return {"kind":"PLATE","thickness_mm":float(m.group(1)),"width_mm":float(m.group(2))}
+    return {"kind":"UNKNOWN","width_mm":50.0,"thickness_mm":None}
 
 
 def collect_segments(dxf_path, min_length=5.0):
     doc,auditor=recover.readfile(dxf_path)
     if auditor.has_errors: raise RuntimeError(f"DXF has structural errors: {auditor.errors}")
     out=[]
+    target_layer = _normalize_layer(MEMBER_LAYER)
+    try:
+        from layer_scanner import scan_dxf_layers
+        layers_info = scan_dxf_layers(doc)
+    except Exception:
+        layers_info = None
     for i,e in enumerate(doc.modelspace().query("LINE")):
-        if e.dxf.layer!=MEMBER_LAYER: continue
+        l_norm = _normalize_layer(e.dxf.layer)
+        if l_norm != target_layer:
+            if layers_info is None or not layers_info.is_role(e.dxf.layer, "MEMBERS"):
+                continue
         x1,y1=float(e.dxf.start.x),float(e.dxf.start.y); x2,y2=float(e.dxf.end.x),float(e.dxf.end.y)
         L=dist((x1,y1),(x2,y2))
         if L<min_length: continue
@@ -172,11 +189,22 @@ def extract_member_geometry_candidates(dxf_path,schedule,max_candidates=5):
     segs=collect_segments(dxf_path)
     doc,_=recover.readfile(dxf_path); msp=doc.modelspace()
     marks=defaultdict(list)
+    target_desig = _normalize_layer(DESIGNATION_LAYER)
     for e in msp.query("TEXT"):
-        if e.dxf.layer==DESIGNATION_LAYER and BACKMARK_RE.fullmatch(e.dxf.text.strip()):
+        if _normalize_layer(e.dxf.layer) == target_desig and BACKMARK_RE.fullmatch(e.dxf.text.strip()):
             marks[e.dxf.text.strip()].append((float(e.dxf.insert.x),float(e.dxf.insert.y)))
+    
+    try:
+        from scale_context import ScaleContext
+        ctx = ScaleContext.from_dxf(dxf_path)
+        endpoint_tol = ctx.joint_cluster_tol_mm
+        max_seed_dist = ctx.max_label_distance_mm
+    except Exception:
+        endpoint_tol = 35.0
+        max_seed_dist = 800.0
+
     out={}
     for mark,entry in schedule.items():
-        cs=candidate_chains(segs,marks.get(mark,[]),entry)
+        cs=candidate_chains(segs,marks.get(mark,[]),entry,endpoint_tol=endpoint_tol,max_seed_distance=max_seed_dist)
         out[mark]={"backmark":mark,"candidates":cs[:max_candidates],"selected":cs[0] if cs else None}
     return out

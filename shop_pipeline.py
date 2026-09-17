@@ -5,7 +5,7 @@ uses the validation shop drawings as production input and never fabricates
 holes, cuts, gauges or bolt counts.
 """
 from __future__ import annotations
-import csv, json, math
+import csv, json, math, re
 from pathlib import Path
 from collections import defaultdict
 from dataclasses import dataclass, asdict
@@ -22,10 +22,14 @@ class BoltEvidence:
     circle_diameter_mm: float; mapped_nominal_diameter_mm: int|None
     duplicate_count:int=1
 
+def _normalize_layer(name: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", (name or "").lower())
+
 def _bolt_circles(msp):
     out=[]
+    target_layer = _normalize_layer(BOLT_LAYER)
     for e in msp.query("CIRCLE"):
-        if e.dxf.layer!=BOLT_LAYER: continue
+        if _normalize_layer(e.dxf.layer) != target_layer: continue
         r=float(e.dxf.radius)
         if r>0: out.append((float(e.dxf.center.x),float(e.dxf.center.y),2*r))
     return out
@@ -61,7 +65,16 @@ def _chain_bolt_evidence(candidate,segs,circles,search_radius=80.0):
                 rows.append(BoltEvidence(x,y,along-lo,perp,hd,HOLE_TO_BOLT[nearest]))
     return _dedupe(rows)
 
-def extract_member_evidence(dxf_path,schedule,max_label_distance=800,member_search_radius=80):
+def extract_member_evidence(dxf_path,schedule,max_label_distance=None,member_search_radius=None):
+    if max_label_distance is None or member_search_radius is None:
+        try:
+            from scale_context import ScaleContext
+            ctx = ScaleContext.from_dxf(dxf_path)
+            if max_label_distance is None: max_label_distance = ctx.max_label_distance_mm
+            if member_search_radius is None: member_search_radius = ctx.member_search_radius_mm
+        except Exception:
+            if max_label_distance is None: max_label_distance = 800.0
+            if member_search_radius is None: member_search_radius = 80.0
     doc,auditor=recover.readfile(dxf_path)
     if auditor.has_errors: raise RuntimeError(f"DXF has structural errors: {auditor.errors}")
     msp=doc.modelspace(); segs=collect_segments(dxf_path); circles=_bolt_circles(msp)

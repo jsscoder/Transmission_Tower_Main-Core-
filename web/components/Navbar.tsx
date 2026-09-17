@@ -13,7 +13,7 @@ export function Navbar() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-bold text-sm tracking-wider uppercase text-slate-100">Antigravity Core</span>
+              <span className="font-bold text-sm tracking-wider uppercase text-slate-100">Transmission Tower Engineering Automation </span>
               <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-brand-500/10 text-brand-500 border border-brand-500/20">PROD</span>
             </div>
             <p className="text-[11px] text-slate-400 font-mono">Transmission Tower Engineering Detailing</p>

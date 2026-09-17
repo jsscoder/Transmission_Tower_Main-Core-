@@ -23,7 +23,16 @@ def _joint_cluster(points,tol=35.0):
 def _group_center(g):
     return (float(g["x"])+125.33,(float(g["y_min"])+float(g["y_max"])+71.39)/2.0)
 
-def build_topology(dxf_path,schedule,member_evidence,groups,endpoint_tolerance=35.0,joint_group_radius=350.0):
+def build_topology(dxf_path,schedule,member_evidence,groups,endpoint_tolerance=None,joint_group_radius=None):
+    if endpoint_tolerance is None or joint_group_radius is None:
+        try:
+            from scale_context import ScaleContext
+            ctx = ScaleContext.from_dxf(dxf_path)
+            if endpoint_tolerance is None: endpoint_tolerance = ctx.joint_cluster_tol_mm
+            if joint_group_radius is None: joint_group_radius = ctx.joint_group_radius_mm
+        except Exception:
+            if endpoint_tolerance is None: endpoint_tolerance = 35.0
+            if joint_group_radius is None: joint_group_radius = 350.0
     segs=collect_segments(dxf_path)
     geom_candidates=extract_member_geometry_candidates(dxf_path,schedule)
     assignments={}

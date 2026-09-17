@@ -15,7 +15,7 @@ The core is function-oriented so a future API/UI can call the same functions
 without shelling out to a CLI.
 """
 from __future__ import annotations
-import argparse,json
+import argparse, json, re
 from pathlib import Path
 import tower
 from app_logger import configure_logging, close_logging
@@ -28,18 +28,56 @@ from shop_drawing import generate_job
 from bom import write_bom
 from shop_reporting import (inventory_from_schedule, write_inventory, load_shop_json, load_shop_json_dir,
                             compare_sets, write_comparison, build_group_report, build_detailed_report,
-                            evaluate_regression_gates, write_regression_report)
+                            evaluate_regression_gates, write_regression_report,
+                            generate_diagnostic_coverage_report, write_diagnostic_coverage_report)
 from review_queue import build_review_queue
 
-def run_pipeline(dxf_path,out_dir='pipeline_out',dpi=300,margin=700,log_level='INFO',design_input=None,engineering_input=None,rules=None,generate=False,reference_shop_json=None,reference_shop_json_dir=None,length_tol_mm=2.0,position_tol_mm=2.0):
+from scale_context import ScaleContext
+from vlm_orchestrator import synthesize_design_input
+from design_rules import load_rules
+
+def run_pipeline(dxf_path,out_dir='pipeline_out',dpi=300,margin=700,log_level='INFO',design_input=None,engineering_input=None,rules=None,generate=False,reference_shop_json=None,reference_shop_json_dir=None,length_tol_mm=2.0,position_tol_mm=2.0,orchestrate=False):
     dxf=Path(dxf_path);out=Path(out_dir)
     if not dxf.exists():raise FileNotFoundError(f'DXF file not found: {dxf}')
     if dxf.suffix.lower()!='.dxf':raise ValueError('Expected a .dxf file')
     out.mkdir(parents=True,exist_ok=True);log=configure_logging(out,log_level)
-    log.info('[1/7] Member schedule + locators')
+    
+    # ScaleContext for drawing extents, coordinate normalization, and adaptive tolerances
+    scale_ctx = ScaleContext.from_dxf(str(dxf))
+    with open(out / "scale_context.json", "w", encoding="utf-8") as f:
+        json.dump(scale_ctx.to_dict(), f, indent=2)
+
+    log.info('[1/7] Member schedule + locators (scale_factor=%.2f)', scale_ctx.scale_factor)
     schedule=tower.extract_member_schedule(str(dxf)); schedule_rows=tower.write_schedule(schedule,out)
     locators=tower.render_locator_crops(str(dxf),schedule,out/'locators',margin=margin,dpi=dpi)
     log.info('      %d members | %d locators',len(schedule_rows),len(locators))
+    locators_data = []
+    locators_dir = out / "locators"
+    for mark, info in schedule.items():
+        locs = info.get("locations", [])
+        primary_loc = locs[0] if locs else [0.0, 0.0]
+        crop_file = f"locator_{mark}.png"
+        crop_exists = (locators_dir / crop_file).exists()
+        raw_len = str(info.get("length_mm", 0.0))
+        len_clean = re.sub(r"[^\d.]", "", raw_len)
+        try:
+            length_val = float(len_clean) if len_clean else 0.0
+        except Exception:
+            length_val = 0.0
+        locators_data.append({
+            "backmark": mark,
+            "section": info.get("section", ""),
+            "length_mm": length_val,
+            "x": float(primary_loc[0]),
+            "y": float(primary_loc[1]),
+            "locations": [[float(lx), float(ly)] for lx, ly in locs],
+            "inferred": bool(info.get("inferred", False)),
+            "inferred_from": str(info.get("inferred_from", "")),
+            "image_filename": crop_file if crop_exists else None,
+            "has_crop": crop_exists,
+        })
+    with open(out / "locators.json", "w", encoding="utf-8") as f:
+        json.dump(locators_data, f, indent=2)
     log.info('[2/7] Native B1 bolt callouts + grouping')
     callouts=extract_bolt_callouts(str(dxf));groups=group_stacked_callouts(callouts);write_callout_outputs(callouts,groups,out)
     log.info('      %d callouts | %d groups',len(callouts),len(groups))
@@ -51,7 +89,7 @@ def run_pipeline(dxf_path,out_dir='pipeline_out',dpi=300,margin=700,log_level='I
     group_dicts=groups_as_dicts(groups);topology=build_topology(str(dxf),schedule,evidence,group_dicts);write_topology(topology,out)
     log.info('      mapped=%d | joints=%d | groups-near-joints=%d',topology['stats']['mapped_members'],topology['stats']['joints'],topology['stats']['groups_with_joint_candidates'])
     log.info('[5/7] Conservative connection resolution')
-    result=resolve(associations,topology,{g['group_id']:g for g in group_dicts});write_resolved(result,out)
+    result=resolve(associations,topology,{g['group_id']:g for g in group_dicts},scale_context=scale_ctx);write_resolved(result,out)
     log.info('      AUTO_CANDIDATE=%d | REVIEW=%d | REJECT=%d',result['stats']['auto_candidate'],result['stats']['review'],result['stats']['reject'])
 
     # Stage 6 & 7: Shop drawing generation + Job BOM
@@ -63,13 +101,24 @@ def run_pipeline(dxf_path,out_dir='pipeline_out',dpi=300,margin=700,log_level='I
                 break
 
     effective_design_input = engineering_input or design_input
+
+    # Autonomous Orchestrator Mode: synthesize connection design if requested
+    if orchestrate and not effective_design_input:
+        loaded_rules = load_rules(rules) if rules else None
+        synth_input = synthesize_design_input(schedule, topology, result, rules=loaded_rules)
+        synth_path = out / "synthesized_connection_design.json"
+        with open(synth_path, "w", encoding="utf-8") as f:
+            json.dump(synth_input, f, indent=2)
+        effective_design_input = str(synth_path)
+        log.info('[ORCHESTRATOR] Synthesized canonical connection design input (%d members) -> %s', len(synth_input), synth_path.name)
+
     generated = []
     bom_rows = []
     shop_generation_status = "SKIPPED"
     shop_generation_reason = "NOT_REQUESTED"
 
-    # Production inventory: categorize all identified members as BUILDABLE or BLOCKED
-    inventory = inventory_from_schedule(schedule, effective_design_input)
+    # Production inventory: categorize all identified members as AUTO_READY, REVIEW_REQUIRED, or BLOCKED
+    inventory = inventory_from_schedule(schedule, effective_design_input, topology=topology, resolved=result)
     write_inventory(inventory, out)
     buildable_marks = set(inventory.get("buildable_backmarks", []))
 
@@ -146,6 +195,22 @@ def run_pipeline(dxf_path,out_dir='pipeline_out',dpi=300,margin=700,log_level='I
     )
     write_regression_report(regression_eval, out)
 
+    # Diagnostic coverage report: DISCOVERED == AUTO_READY + REVIEW_REQUIRED + BLOCKED
+    coverage_report = generate_diagnostic_coverage_report(
+        schedule=schedule,
+        topology=topology,
+        resolved=result,
+        inventory=inventory,
+        generated=generated,
+        callouts=callouts,
+        evidence=evidence,
+    )
+    write_diagnostic_coverage_report(coverage_report, out)
+    log.info('[COVERAGE] discovered=%d | auto_ready=%d | review_required=%d | blocked=%d (invariant_balanced=%s)',
+             coverage_report['members_discovered'], coverage_report['members_ready_for_rendering'],
+             coverage_report['members_requiring_review'], coverage_report['blocked_members'],
+             coverage_report['coverage_equation']['balanced'])
+
     reg_summary = regression_eval.get("summary", {})
     rq_summary = review_q.get("summary", {})
 
@@ -162,16 +227,20 @@ def run_pipeline(dxf_path,out_dir='pipeline_out',dpi=300,margin=700,log_level='I
         'job': 'WO_429',
         'members_total': len(schedule_rows),
         'buildable': inventory['currently_buildable_with_design_input'],
+        'auto_ready': coverage_report['members_ready_for_rendering'],
+        'review_required': coverage_report['members_requiring_review'],
         'generated': len(generated),
         'passed': reg_summary.get('validated_reference', 0),
         'review': rq_summary.get('total_items', 0),
-        'blocked': inventory.get('blocked_count', len(inventory.get('blocked', []))),
+        'blocked': inventory.get('non_buildable_count', inventory.get('blocked_count', len(inventory.get('blocked', [])))),
+        'blocked_only': inventory.get('blocked_count', len(inventory.get('blocked', []))),
         'reference_drawings': reg_summary.get('reference_drawings', 26),
         'validated_reference': reg_summary.get('validated_reference', 26),
         'not_validated': reg_summary.get('not_validated', 11),
         'generation_status': shop_generation_status,
         'generation_reason': shop_generation_reason,
         'overall_gates_passed': reg_summary.get('overall_pass', False),
+        'coverage_equation_balanced': coverage_report['coverage_equation']['balanced'],
         'gates_summary': reg_summary.get('gates', {}),
     }
     (out / 'run_summary.json').write_text(json.dumps(run_summary_data, indent=2), encoding="utf-8")
@@ -189,6 +258,9 @@ def run_pipeline(dxf_path,out_dir='pipeline_out',dpi=300,margin=700,log_level='I
         **{f'inference_{k}': v for k, v in result['stats'].items()},
         'identified_shop_drawings': inventory['total_unique_shop_drawings_identified'],
         'currently_buildable_shop_drawings': inventory['currently_buildable_with_design_input'],
+        'auto_ready': coverage_report['members_ready_for_rendering'],
+        'review_required': coverage_report['members_requiring_review'],
+        'coverage_equation_balanced': coverage_report['coverage_equation']['balanced'],
         'generated_drawings': len(generated),
         'generation_status': shop_generation_status,
         'generation_reason': shop_generation_reason,
@@ -256,6 +328,8 @@ def main():
     p.add_argument('--reference-shop-json-dir', help='Directory of existing/reference shop-drawing JSON files')
     p.add_argument('--length-tol-mm', type=float, default=2.0)
     p.add_argument('--position-tol-mm', type=float, default=2.0)
+    p.add_argument('--orchestrate', '--vlm-orchestrate', dest='orchestrate', action='store_true', default=False,
+                   help='Autonomously synthesize connection design input via Consensus Gate + VLM orchestrator')
     a = p.parse_args()
     run_pipeline(
         a.dxf,
@@ -269,7 +343,8 @@ def main():
         reference_shop_json=a.reference_shop_json,
         reference_shop_json_dir=a.reference_shop_json_dir,
         length_tol_mm=a.length_tol_mm,
-        position_tol_mm=a.position_tol_mm
+        position_tol_mm=a.position_tol_mm,
+        orchestrate=a.orchestrate,
     )
 
 if __name__ == '__main__':

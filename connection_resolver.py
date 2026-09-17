@@ -20,10 +20,12 @@ def _cos_score(a,b,c):
     nv=math.hypot(vx,vy);nu=math.hypot(ux,uy)
     return .5 if not nv or not nu else min(1,abs((vx*ux+vy*uy)/(nv*nu)))
 
-def resolve(candidates,topology,groups_by_id,auto_threshold=.82,review_threshold=.45):
+def resolve(candidates,topology,groups_by_id,auto_threshold=.82,review_threshold=.45,scale_context=None):
     refs={(r['backmark'],r['end']):r['joint_id'] for r in topology.get('endpoint_refs',[])}
     joints={j['joint_id']:(j['x'],j['y']) for j in topology.get('joints',[])}
     gm={r['group_id']:r.get('nearby_joints',[]) for r in topology.get('group_joint_proximity',[])}
+    joint_decay = scale_context.joint_decay_scale_mm if scale_context else 180.0
+    anchor_decay = scale_context.anchor_decay_scale_mm if scale_context else 140.0
     proposals=[]
     for mark,entry in candidates.items():
         ass=topology.get('member_assignments',{}).get(mark)
@@ -44,9 +46,9 @@ def resolve(candidates,topology,groups_by_id,auto_threshold=.82,review_threshold
                 for x in gm.get(gid,[]):
                     if x['joint_id']==joint: d_joint=float(x['distance_mm']); break
                 if joint and d_joint<99999:
-                    sj=_score_distance(d_joint,180)
+                    sj=_score_distance(d_joint,joint_decay)
                 else: sj=0
-                sd=_score_distance(d_anchor,140)
+                sd=_score_distance(d_anchor,anchor_decay)
                 sdir=_cos_score(pts[end],pts[other],gc)
                 # Candidate is strong only when both the joint and annotation
                 # support the same endpoint. Direction is a tie breaker.

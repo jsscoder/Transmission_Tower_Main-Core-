@@ -21,6 +21,7 @@ from backend.schemas import (
     CandidateItem,
     Job,
     LocatorItem,
+    LocatorsSummary,
     MemberItem,
     PipelineMetrics,
     RegressionDrawingScore,
@@ -183,7 +184,7 @@ def _adapter_for_job(job_id: str) -> EngineAdapter:
     job = job_manager.get_job(job_id)
     if not job:
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
-    return EngineAdapter(job.output_dir)
+    return EngineAdapter(job.output_dir, job_id=job_id)
 
 
 @app.get("/api/jobs/{job_id}/metrics", response_model=PipelineMetrics)
@@ -201,10 +202,17 @@ def get_job_members(job_id: str):
 
 
 @app.get("/api/jobs/{job_id}/locators", response_model=list[LocatorItem])
-def get_job_locators(job_id: str):
-    """Get extracted locators and bolt callouts."""
+def get_job_locators(job_id: str, kind: str = "all"):
+    """Get extracted locators and bolt callouts with CAD coordinates and PNG artifacts."""
     adapter = _adapter_for_job(job_id)
-    return adapter.get_locators()
+    return adapter.get_locators(kind=kind)
+
+
+@app.get("/api/jobs/{job_id}/locators/summary", response_model=LocatorsSummary)
+def get_job_locators_summary(job_id: str):
+    """Get complete locators summary including assembly image and breakdown."""
+    adapter = _adapter_for_job(job_id)
+    return adapter.get_locators_summary()
 
 
 @app.get("/api/jobs/{job_id}/topology", response_model=list[TopologyJoint])
@@ -269,6 +277,16 @@ def get_job_review(job_id: str):
     """Get actionable review queue items."""
     adapter = _adapter_for_job(job_id)
     return adapter.get_review_queue()
+
+
+@app.get("/api/jobs/{job_id}/scale-context")
+def get_job_scale_context(job_id: str):
+    """Get scale context, extents, and adaptive tolerances for this job."""
+    adapter = _adapter_for_job(job_id)
+    ctx = adapter.get_scale_context()
+    if ctx is None:
+        raise HTTPException(status_code=404, detail="Scale context not available for this job")
+    return ctx
 
 
 # ============================================================

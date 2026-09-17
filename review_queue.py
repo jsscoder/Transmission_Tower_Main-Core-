@@ -25,9 +25,9 @@ def build_review_queue(
     items: list[dict[str, Any]] = []
     item_counter = 1
 
-    # 1. Blocked fabrication members from inventory
+    # 1. Non-buildable / review / blocked fabrication members from inventory
     if inventory:
-        blocked_entries = inventory.get("blocked", [])
+        blocked_entries = inventory.get("non_buildable") or inventory.get("blocked", [])
         for entry in blocked_entries:
             mark = str(entry.get("backmark", "")).strip()
             drawing_id = f"429B{mark}" if mark else "UNKNOWN"

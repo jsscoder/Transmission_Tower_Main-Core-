@@ -576,18 +576,21 @@ class FlatMemberRenderer:
         _line(msp, (x0, y_bot), (x0, y_top), LAYER_MEMBER)
         _line(msp, (x0 + ls, y_bot), (x0 + ls, y_top), LAYER_MEMBER)
 
-        # Centerline along length
-        trans_offset = 22.0
+        # Centerlines along length for unique transverse gauge lines
+        unique_trans = []
         for h in holes:
             t = h.get("transverse_mm") if isinstance(h, dict) else getattr(h, "transverse_mm", None)
             if t is None:
                 t = h.get("edge_distance_mm") if isinstance(h, dict) else getattr(h, "edge_distance_mm", None)
-            if t is not None:
-                trans_offset = float(t)
-                break
+            if t is not None and float(t) not in unique_trans:
+                unique_trans.append(float(t))
+        if not unique_trans:
+            unique_trans = [22.0]
+        unique_trans.sort()
 
-        y_hole_line = y_bot + trans_offset * scale
-        _line(msp, (x0 - 5.0, y_hole_line), (x0 + ls + 5.0, y_hole_line), LAYER_CENTER)
+        for t_val in unique_trans:
+            y_hl = y_bot + t_val * scale
+            _line(msp, (x0 - 5.0, y_hl), (x0 + ls + 5.0, y_hl), LAYER_CENTER)
 
         # Holes
         for h in holes:
@@ -596,33 +599,30 @@ class FlatMemberRenderer:
             trans = h.get("transverse_mm") if isinstance(h, dict) else getattr(h, "transverse_mm", None)
             if trans is None:
                 trans = h.get("edge_distance_mm") if isinstance(h, dict) else getattr(h, "edge_distance_mm", None)
-            hy = y_bot + float(trans) * scale if trans is not None else y_hole_line
+            hy = y_bot + float(trans) * scale if trans is not None else (y_bot + unique_trans[0] * scale)
             dia = float(h.get("hole_diameter_mm", h.get("diameter_mm", 13.5)) if isinstance(h, dict) else getattr(h, "diameter_mm", 13.5))
             _draw_hole_symbol(msp, (hx, hy), dia, scale)
 
-        # Transverse end dimensions at left end (total width 45, split 22 and 23)
-        split1 = trans_offset
-        split2 = self.width_mm - trans_offset
+        # Transverse end dimensions at left end
+        trans_points = [0.0] + unique_trans + [self.width_mm]
         x1 = x0 - 8.0
         x2 = x0 - 18.0
 
-        # Inner split dimension line at x1
-        _line(msp, (x0, y_bot), (x1 - 2.0, y_bot), LAYER_DIM)
-        _line(msp, (x0, y_hole_line), (x1 - 2.0, y_hole_line), LAYER_DIM)
-        _line(msp, (x0, y_top), (x1 - 2.0, y_top), LAYER_DIM)
+        # Witness lines at x1
+        for tp in trans_points:
+            yp = y_bot + tp * scale
+            _line(msp, (x0, yp), (x1 - 2.0, yp), LAYER_DIM)
+            _line(msp, (x1 - 0.8, yp - 0.8), (x1 + 0.8, yp + 0.8), LAYER_DIM)
 
-        _line(msp, (x1, y_bot), (x1, y_hole_line), LAYER_DIM)
-        _line(msp, (x1, y_hole_line), (x1, y_top), LAYER_DIM)
-
-        _line(msp, (x1 - 0.8, y_bot - 0.8), (x1 + 0.8, y_bot + 0.8), LAYER_DIM)
-        _line(msp, (x1 - 0.8, y_hole_line - 0.8), (x1 + 0.8, y_hole_line + 0.8), LAYER_DIM)
-        _line(msp, (x1 - 0.8, y_top - 0.8), (x1 + 0.8, y_top + 0.8), LAYER_DIM)
-
-        ent_s1 = msp.add_text(f"{round(split1):g}", dxfattribs={"height": 2.2, "layer": LAYER_DIM})
-        ent_s1.set_placement((x1 - 1.2, (y_bot + y_hole_line) / 2.0), align=TextEntityAlignment.MIDDLE_RIGHT)
-
-        ent_s2 = msp.add_text(f"{round(split2):g}", dxfattribs={"height": 2.2, "layer": LAYER_DIM})
-        ent_s2.set_placement((x1 - 1.2, (y_hole_line + y_top) / 2.0), align=TextEntityAlignment.MIDDLE_RIGHT)
+        # Dimension segments and text
+        for a, b in zip(trans_points, trans_points[1:]):
+            ya = y_bot + a * scale
+            yb = y_bot + b * scale
+            _line(msp, (x1, ya), (x1, yb), LAYER_DIM)
+            mid_y = (ya + yb) / 2.0
+            val = round(b - a, 2)
+            ent_s = msp.add_text(f"{val:g}", dxfattribs={"height": 2.2, "layer": LAYER_DIM})
+            ent_s.set_placement((x1 - 1.2, mid_y), align=TextEntityAlignment.MIDDLE_RIGHT)
 
         # Outer total width dimension line at x2
         _line(msp, (x1 - 2.0, y_bot), (x2 - 2.0, y_bot), LAYER_DIM)
@@ -1320,9 +1320,9 @@ def generate_member_dxf(
     section_str = str(member["section"])
     info = _parse_section(section_str)
 
-    # Look up gauge distance for angles (supports IS 802 double gauge lines)
-    gauge_mm = None
-    if info.get("kind") == "ANGLE":
+    # Look up gauge distance for angles (supports explicit member override or IS 802 table)
+    gauge_mm = member.get("gauge_mm")
+    if gauge_mm is None and info.get("kind") == "ANGLE":
         try:
             gauges = get_gauge_distances(section_str, rules)
             gauge_mm = gauges if len(gauges) > 1 else gauges[0]
@@ -1352,7 +1352,8 @@ def generate_member_dxf(
         leg_a = float(info.get("leg_a_mm", 50))
         leg_b = float(info.get("leg_b_mm", 50))
         thk = float(info.get("thickness_mm", 5))
-        renderer = AngleMemberRenderer(leg_a, leg_b, thk, length, gauge_mm=gauge_mm)
+        miter_cut = bool(member.get("miter_cut", True))
+        renderer = AngleMemberRenderer(leg_a, leg_b, thk, length, gauge_mm=gauge_mm, miter_cut=miter_cut)
         renderer.render(msp, origin, holes, scale)
         bottom_y = origin[1]
     elif info.get("kind") == "FLAT":

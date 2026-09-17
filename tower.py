@@ -68,6 +68,43 @@ from pathlib import Path
 
 DESIGNATION_LAYER = "23_Member designation"
 
+
+def _normalize_layer_name(name: str) -> str:
+    """Strip case, spaces, and underscores so '23_Member designation',
+    '23_MEMBER_DESIGNATION', and '23 member designation' all compare equal.
+    This is the actual fix for the bug found running against a second real
+    DXF (348_AD_PART-_M2.dxf): that file names the same layer
+    '23_MEMBER_DESIGNATION' (all caps, underscores), which the old exact
+    `e.dxf.layer == DESIGNATION_LAYER` comparison silently matched zero
+    entities against -- not a parsing failure, no error raised, just an
+    empty schedule. Confirmed by testing: 0 backmarks found on that file
+    before this fix."""
+    return re.sub(r"[^a-z0-9]", "", name.lower())
+
+
+def _resolve_designation_layer(doc) -> str:
+    """Finds the real layer name in this DXF that matches
+    DESIGNATION_LAYER, tolerant of case/spacing/underscore differences.
+    Raises a clear, specific error if no match exists at all -- silently
+    returning an empty schedule (the old behavior) looks identical to 'this
+    drawing has no member designations', which is a much worse failure
+    mode than a loud error naming exactly what's missing."""
+    target = _normalize_layer_name(DESIGNATION_LAYER)
+    names = [layer.dxf.name for layer in doc.layers]
+    for name in names:
+        if name == DESIGNATION_LAYER:
+            return name
+    for name in names:
+        if _normalize_layer_name(name) == target:
+            return name
+    raise RuntimeError(
+        f"No layer matching '{DESIGNATION_LAYER}' found in this DXF "
+        f"(tried exact and case/spacing-insensitive match). "
+        f"Layers present: {names}. "
+        f"This DXF may use a genuinely different member-designation scheme "
+        f"than WO_429 -- check manually before assuming this fix covers it."
+    )
+
 # A real backmark looks like "21", "22H", "375H" -- digits, optional
 # 1-2 letter suffix. This excludes annotation text on the same layer
 # ("N.S.", "CLT.", "F.S.", "PACK PLATE", "BTB LEVEL", "PLT.", "%%UP1", ...)
@@ -104,6 +141,28 @@ def _suffix(mark: str):
     return m.group(1) if m else ""
 
 
+def _parse_desc_text(dt: str):
+    """Parses a member description string separated by '..'.
+    Handles:
+      - 'SECTION..LENGTH' (e.g. 'L55x55x5..7716')
+      - 'SECTION..LENGTH..REMARK' (e.g. 'HTL90x90x6..406..CLT', '6 thk x104..160..PLT')
+    Returns (section, length_str, remark) or (None, None, None) if invalid/non-numeric length.
+    """
+    parts = [p.strip() for p in dt.split("..") if p.strip()]
+    if not parts or len(parts) == 1:
+        return None, None, None
+    section = parts[0]
+    length = None
+    remark = None
+    for p in parts[1:]:
+        m = re.match(r"^(\d+(?:\.\d+)?)$", p)
+        if m and length is None:
+            length = m.group(1)
+        else:
+            remark = p if remark is None else f"{remark} {p}"
+    return section, length, remark
+
+
 def extract_member_schedule(dxf_path: str) -> dict:
     """Returns {backmark: {section, length_mm, count, locations,
     match_distance_mm, inferred}}. `locations` always has every raw
@@ -113,14 +172,21 @@ def extract_member_schedule(dxf_path: str) -> dict:
     if auditor.has_errors:
         raise RuntimeError(f"DXF has structural errors: {auditor.errors}")
     msp = doc.modelspace()
+    layer_name = _resolve_designation_layer(doc)
 
     texts = [
         (e.dxf.text.strip(), e.dxf.insert.x, e.dxf.insert.y)
         for e in msp.query("TEXT")
-        if e.dxf.layer == DESIGNATION_LAYER
+        if e.dxf.layer == layer_name
     ]
 
-    descs = [(t, x, y) for t, x, y in texts if ".." in t]
+    descs = []
+    for dt, dx, dy in texts:
+        if ".." in dt:
+            sec, length, rem = _parse_desc_text(dt)
+            if length is not None:
+                descs.append((sec, length, rem, dx, dy))
+
     marks = [(t, x, y) for t, x, y in texts if ".." not in t and BACKMARK_RE.match(t)]
 
     # every raw occurrence of every backmark, used for locator crops even
@@ -131,7 +197,7 @@ def extract_member_schedule(dxf_path: str) -> dict:
 
     used = set()
     schedule = {}
-    for dt, dx, dy in descs:
+    for sec, length, rem, dx, dy in descs:
         best_i, best_d = None, float("inf")
         for i, (mt, mx, my) in enumerate(marks):
             if i in used:
@@ -143,12 +209,12 @@ def extract_member_schedule(dxf_path: str) -> dict:
             continue
         used.add(best_i)
         mark = marks[best_i][0]
-        section, length = dt.rsplit("..", 1)
         entry = schedule.setdefault(
             mark,
             {
-                "section": section,
+                "section": sec,
                 "length_mm": length,
+                "remark": rem,
                 "count": 0,
                 "locations": list(all_positions.get(mark, [])),
                 "match_distance_mm": round(best_d, 1),
@@ -237,15 +303,27 @@ def render_full_assembly(dxf_path: str, png_path: Path, dpi: int = 300):
     doc, _ = recover.readfile(dxf_path)
     msp = doc.modelspace()
     ext = bbox.extents(msp)
-    w = ext.extmax.x - ext.extmin.x
-    h = ext.extmax.y - ext.extmin.y
+    w = max(1.0, ext.extmax.x - ext.extmin.x)
+    h = max(1.0, ext.extmax.y - ext.extmin.y)
 
-    fig = plt.figure(figsize=(w / 500, h / 500))
+    # For drawings with large physical extents (e.g. span > 15m), cap the figure size
+    # so that the rasterized pixel dimensions stay crisp and balanced (target ~6000 px on longest edge)
+    # rather than exploding memory or PIL decompression limits.
+    longest_dim_mm = max(w, h)
+    if longest_dim_mm > 15000:
+        scale = 20.0 / (longest_dim_mm / 500.0)
+        fig_w = (w / 500.0) * scale
+        fig_h = (h / 500.0) * scale
+    else:
+        fig_w = w / 500.0
+        fig_h = h / 500.0
+
+    fig = plt.figure(figsize=(fig_w, fig_h))
     ax = fig.add_axes([0, 0, 1, 1])
     ax.set_xlim(ext.extmin.x, ext.extmax.x)
     ax.set_ylim(ext.extmin.y, ext.extmax.y)
-    Frontend(RenderContext(doc), MatplotlibBackend(ax)).draw_layout(msp, finalize=True)
     ax.set_axis_off()
+    Frontend(RenderContext(doc), MatplotlibBackend(ax)).draw_layout(msp, finalize=False)
     fig.savefig(png_path, dpi=dpi, facecolor="white")
     plt.close(fig)
     return (ext.extmin.x, ext.extmin.y, ext.extmax.x, ext.extmax.y)
@@ -254,14 +332,21 @@ def render_full_assembly(dxf_path: str, png_path: Path, dpi: int = 300):
 def render_locator_crops(dxf_path: str, schedule: dict, out_dir: Path, marks=None, margin=700, dpi=300):
     """Crop a locator window around each backmark's real text position and
     burn a label strip on it. Uses raw positions, so it still works for
-    backmarks with no schedule match."""
+    backmarks with no schedule match. Automatically applies scale-adaptive
+    margins for large drawings."""
     _require("PIL", "pillow")
     from PIL import Image, ImageDraw, ImageFont
+    from scale_context import ScaleContext
+
+    # Safe for large engineering drawings
+    Image.MAX_IMAGE_PIXELS = None
 
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     full_png = out_dir / "_full_assembly.png"
     xmin, ymin, xmax, ymax = render_full_assembly(dxf_path, full_png, dpi=dpi)
+
+    ctx = ScaleContext.from_extents(xmin, ymin, xmax, ymax)
 
     img = Image.open(full_png).convert("RGB")
     W, H = img.size
@@ -284,9 +369,19 @@ def render_locator_crops(dxf_path: str, schedule: dict, out_dir: Path, marks=Non
         if not entry or not entry["locations"]:
             results[mark] = None
             continue
+
+        raw_len = entry.get("length_mm")
+        try:
+            m_len = float(re.sub(r"[^\d.]", "", str(raw_len)))
+        except Exception:
+            m_len = None
+
+        # Use scale-adaptive margin if default margin is passed
+        effective_margin = ctx.adaptive_locator_margin(m_len) if (margin is None or margin == 700) else float(margin)
+
         wx, wy = entry["locations"][0]
-        px1, py1 = world_to_px(wx - margin, wy + margin)
-        px2, py2 = world_to_px(wx + margin, wy - margin)
+        px1, py1 = world_to_px(wx - effective_margin, wy + effective_margin)
+        px2, py2 = world_to_px(wx + effective_margin, wy - effective_margin)
         left, top = max(0, int(min(px1, px2))), max(0, int(min(py1, py2)))
         right, bottom = min(W, int(max(px1, px2))), min(H, int(max(py1, py2)))
         if right <= left or bottom <= top:
@@ -381,5 +476,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-    
